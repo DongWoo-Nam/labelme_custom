@@ -247,13 +247,14 @@ def upload_directory(bucket_name, local_folder_path, directory):
 def delete_object(bucket_name, local_file_path):
     s3bucket = s3.Bucket(bucket_name)
     # 삭제할 오브젝트명 설정
-    object_name = local_file_path.split("labelme" + os.path.sep)[1].replace(os.path.sep, "/")  # 흰다리 새우에서만 사용 가능
-    # 파일 업로드
-    print("local_file_path={}".format(local_file_path))
-    print("bucket_name={}".format(bucket_name))
-    print("object_name={}".format(object_name))
-    # s3_up.upload_file(local_file_path, bucket_name, object_name)
-    s3bucket.delete_object(object_name)
+    object_name = local_file_path.split("labelme" + os.path.sep)[1].replace(os.path.sep, "/")
+    s3bucket.delete_objects(Delete={
+        'Objects': [
+            {
+                'Key': object_name
+            }
+        ]
+    })
 
 
 if __name__ == '__main__':
