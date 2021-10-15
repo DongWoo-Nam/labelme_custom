@@ -31,8 +31,7 @@ s3_up = boto3.client(service_name, aws_access_key_id=app.up_access_key, aws_secr
 s3 = boto3.Session(region_name='kr-standard',
                    aws_access_key_id=app.down_access_key,
                    aws_secret_access_key=app.down_access_token).resource('s3',
-                                                                         endpoint_url='https://kr.object.ncloudstorage.com')  #
-
+                                                                         endpoint_url='https://kr.object.ncloudstorage.com')
 
 # 버킷 목록 가져오기
 def get_bucket_list():
@@ -244,6 +243,17 @@ def upload_directory(bucket_name, local_folder_path, directory):
         print(NFE)
     except Exception as E:
         print(E)
+
+def delete_object(bucket_name, local_file_path):
+    s3bucket = s3.Bucket(bucket_name)
+    # 삭제할 오브젝트명 설정
+    object_name = local_file_path.split("labelme" + os.path.sep)[1].replace(os.path.sep, "/")  # 흰다리 새우에서만 사용 가능
+    # 파일 업로드
+    print("local_file_path={}".format(local_file_path))
+    print("bucket_name={}".format(bucket_name))
+    print("object_name={}".format(object_name))
+    # s3_up.upload_file(local_file_path, bucket_name, object_name)
+    s3bucket.delete_object(object_name)
 
 
 if __name__ == '__main__':
