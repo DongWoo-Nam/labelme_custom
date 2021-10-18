@@ -248,7 +248,7 @@ def upload_directory(bucket_name, local_folder_path, directory):
 def delete_object(bucket_name, local_file_path):
     s3bucket = s3.Bucket(bucket_name)
     # 삭제할 오브젝트명 설정
-    object_name = local_file_path.split("labelme" + os.path.sep)[1].replace(os.path.sep, "/")
+    object_name = local_file_path.split("labelme" + os.path.sep)[1].replace(os.path.sep, "/")  # 수정 필요
     s3bucket.delete_objects(Delete={
         'Objects': [
             {
