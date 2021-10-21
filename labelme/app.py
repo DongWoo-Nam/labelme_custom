@@ -9,6 +9,7 @@ import webbrowser
 import time
 import sys
 import datetime
+import traceback
 
 from PyQt5.QtWidgets import QMessageBox
 
@@ -57,14 +58,22 @@ else:
 conf = get_config(CONFFILE) # added by khlee
 local_depository = r"C:\\labelme\\"  # 저장 경로 수정 by dwnam 210913
 # local_depository = os.path.expanduser('~') + os.path.sep + "Documents" + os.path.sep + "labelme" + os.path.sep
-down_bucket_name = conf["down_bucket_name"]
-down_directory = conf["down_directory"]
+down_bucket_name_list = []
+down_directory_list = []
+up_bucket_name_list = []
+up_directory_list = []
+for i in range(1, 4):
+    down_bucket_name_list.append(conf["down" + str(i) + "_bucket_name"])
+    down_directory_list.append(conf["down" + str(i) + "_directory"])
+    up_bucket_name_list.append(conf["up" + str(i) + "_bucket_name"])
+    up_directory_list.append(conf["up" + str(i) + "_directory"])
+
 down_access_key = conf["down_access_key"]
 down_access_token = conf["down_access_token"]
-up_bucket_name = conf["up_bucket_name"]
-up_directory = conf["up_directory"]
 up_access_key = conf["up_access_key"]
 up_access_token = conf["up_access_token"]
+
+local_directory_name = ['first_data', 're1_data', 're2_data']
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -120,7 +129,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         super(MainWindow, self).__init__()
-        self.setWindowTitle(__appname__)
+        self.setWindowTitle(__appname__ + " (작업자용)")
 
         # Whether we need to save or not.
         self.dirty = False
@@ -190,40 +199,55 @@ class MainWindow(QtWidgets.QMainWindow):
         self.loginLayout.setSpacing(0)
         self.loginLayout.addWidget(self.id)
         self.loginLayout.addWidget(self.loginBtn)
-        self.uploadBtn = QtWidgets.QPushButton("완료 데이터 업로드", self)
-        self.uploadBtn.clicked.connect(self.upload)
 
-        self.fileSearch = QtWidgets.QLineEdit()
-        self.fileSearch.setPlaceholderText(self.tr("Search Filename"))
-        self.fileSearch.textChanged.connect(self.fileSearchChanged)
-        self.fileListWidget = QtWidgets.QListWidget()
-        self.fileListWidget.itemSelectionChanged.connect(
-            self.fileSelectionChanged
-        )
-        fileListLayout = QtWidgets.QVBoxLayout()
-        fileListLayout.setContentsMargins(0, 0, 0, 0)
-        fileListLayout.setSpacing(0)
-        fileListLayout.addLayout(self.loginLayout)  # by hw1230
-        # fileListLayout.addWidget(self.fileSearch)     # deleted by hw1230
-        fileListLayout.addWidget(self.fileListWidget)
-        fileListLayout.addWidget(self.uploadBtn)  # by hw1230
+        self.uploadBtnList = []
+        self.fileListWidgetList = []
+        self.fileListLayoutList = []
+        self.doneListWidgetList = []
+        
+        for i in range(0, 3):
+            self.uploadBtnList.append(QtWidgets.QPushButton("완료 데이터 업로드", self))
+            self.uploadBtnList[i].clicked.connect(self.upload)
+
+            self.fileListWidgetList.append(QtWidgets.QListWidget())
+            self.fileListWidgetList[i].setMinimumHeight(int(float(self.height()) * 0.9))
+            self.fileListWidgetList[i].itemSelectionChanged.connect(
+                self.fileSelectionChanged
+            )
+
+            self.doneListWidgetList.append(QtWidgets.QListWidget())
+
+            self.fileListLayoutList.append(QtWidgets.QVBoxLayout())
+            self.fileListLayoutList[i].setContentsMargins(0, 0, 0, 0)
+            self.fileListLayoutList[i].setSpacing(0)
+            self.fileListLayoutList[i].addWidget(self.fileListWidgetList[i])
+            self.fileListLayoutList[i].addWidget(self.uploadBtnList[i])
+            self.fileListLayoutList[i].addWidget(QtWidgets.QLabel('작업 완료 목록', self))
+            self.fileListLayoutList[i].addWidget(self.doneListWidgetList[i])
+            
+        self.tabs = QtWidgets.QTabWidget()
+        t1 = QtWidgets.QWidget()
+        t1.setLayout(self.fileListLayoutList[0])
+        self.tabs.addTab(t1, '초기 데이터')
+        t2 = QtWidgets.QWidget()
+        t2.setLayout(self.fileListLayoutList[1])
+        self.tabs.addTab(t2, '1차 검수 데이터')
+        t3 = QtWidgets.QWidget()
+        t3.setLayout(self.fileListLayoutList[2])
+        self.tabs.addTab(t3, '2차 검수 데이터')
+        self.tabs.currentChanged.connect(self.tabChanged)
+
+        outerLayout = QtWidgets.QVBoxLayout()
+        outerLayout.setContentsMargins(0, 0, 0, 0)
+        outerLayout.setSpacing(0)
+        outerLayout.addLayout(self.loginLayout)  # by hw1230
+        outerLayout.addWidget(self.tabs)
+
         self.file_dock = QtWidgets.QDockWidget(self.tr(u"작업 목록"), self)
         self.file_dock.setObjectName(u"Files")
         flw = QtWidgets.QWidget()  # 헷갈려서 변수명 변경 fileListWidget -> flw. by hw1230
-        flw.setLayout(fileListLayout)
+        flw.setLayout(outerLayout)
         self.file_dock.setWidget(flw)
-
-        # GUI added by hw1230
-        self.doneListWidget = QtWidgets.QListWidget()
-        doneListLayout = QtWidgets.QVBoxLayout()
-        doneListLayout.setContentsMargins(0, 0, 0, 0)
-        doneListLayout.setSpacing(0)
-        doneListLayout.addWidget(self.doneListWidget)
-        self.done_dock = QtWidgets.QDockWidget(self.tr(u"작업 완료 목록"), self)
-        self.done_dock.setObjectName(u"Done")
-        dlw = QtWidgets.QWidget()
-        dlw.setLayout(doneListLayout)
-        self.done_dock.setWidget(dlw)
 
         self.zoomWidget = ZoomWidget()
         self.setAcceptDrops(True)
@@ -252,7 +276,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(scrollArea)
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
-        for dock in ["shape_dock", "file_dock", "done_dock"]:  # "done_dock" added by hw1230
+        for dock in ["shape_dock", "file_dock"]:  # "done_dock" added by hw1230
             if self._config[dock]["closable"]:
                 features = features | QtWidgets.QDockWidget.DockWidgetClosable
             if self._config[dock]["floatable"]:
@@ -267,7 +291,6 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.addDockWidget(Qt.RightDockWidgetArea, self.label_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.shape_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.file_dock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.done_dock)  # by hw1230
 
         # Actions
         action = functools.partial(utils.newAction, self)
@@ -749,7 +772,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 # self.label_dock.toggleViewAction(),
                 self.shape_dock.toggleViewAction(),
                 self.file_dock.toggleViewAction(),
-                self.done_dock.toggleViewAction(),  # by hw1230
                 None,
                 fill_drawing,
                 None,
@@ -922,7 +944,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         self.dirty = True
         self.actions.save.setEnabled(True)
-        title = __appname__
+        title = __appname__ + " (작업자용)"
         if self.filename is not None:
             title = "{} - {}*".format(title, self.filename)
         self.setWindowTitle(title)
@@ -936,7 +958,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.createLineMode.setEnabled(True)
         self.actions.createPointMode.setEnabled(True)
         self.actions.createLineStripMode.setEnabled(True)
-        title = __appname__
+        title = __appname__ + " (작업자용)"
         if self.filename is not None:
             title = "{} - {}".format(title, self.filename)
         self.setWindowTitle(title)
@@ -1151,7 +1173,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
     def fileSelectionChanged(self):
-        items = self.fileListWidget.selectedItems()
+        items = self.fileListWidgetList[self.tabs.currentIndex()].selectedItems()
         if not items:
             return
         item = items[0]
@@ -1164,7 +1186,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if currIndex < len(self.imageList):
             filename = self.imageList[currIndex]
             if filename:
-                self.loadFile(filename)
+                self.loadFile(self.tabs.currentIndex(), filename)
 
     # React to canvas signals.
     def shapeSelectionChanged(self, selected_shapes):
@@ -1326,7 +1348,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 flags=flags,
             )
             self.labelFile = lf
-            items = self.fileListWidget.findItems(
+            items = self.fileListWidgetList[self.tabs.currentIndex()].findItems(
                 self.imagePath, Qt.MatchExactly
             )
             if len(items) > 0:
@@ -1499,14 +1521,14 @@ class MainWindow(QtWidgets.QMainWindow):
         for item in self.labelList:
             item.setCheckState(Qt.Checked if value else Qt.Unchecked)
 
-    def loadFile(self, filename=None):
+    def loadFile(self, tabIndex, filename=None):
         """Load the specified file, or the last opened file if None."""
         # changing fileListWidget loads file
         if filename in self.imageList and (
-                self.fileListWidget.currentRow() != self.imageList.index(filename)
+                self.fileListWidgetList[tabIndex].currentRow() != self.imageList.index(filename)
         ):
-            self.fileListWidget.setCurrentRow(self.imageList.index(filename))
-            self.fileListWidget.repaint()
+            self.fileListWidgetList[tabIndex].setCurrentRow(self.imageList.index(filename))
+            self.fileListWidgetList[tabIndex].repaint()
             return
 
         self.resetState()
@@ -1712,7 +1734,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def loadRecent(self, filename):
         if self.mayContinue():
-            self.loadFile(filename)
+            self.loadFile(self.tabs.currentIndex(), filename)
 
     def openPrevImg(self, _value=False):
         keep_prev = self._config["keep_prev"]
@@ -1732,7 +1754,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if currIndex - 1 >= 0:
             filename = self.imageList[currIndex - 1]
             if filename:
-                self.loadFile(filename)
+                self.loadFile(self.tabs.currentIndex(), filename)
 
         self._config["keep_prev"] = keep_prev
 
@@ -1759,7 +1781,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.filename = filename
 
         if self.filename and load:
-            self.loadFile(self.filename)
+            self.loadFile(self.tabs.currentIndex(), self.filename)
 
         self._config["keep_prev"] = keep_prev
 
@@ -1784,7 +1806,7 @@ class MainWindow(QtWidgets.QMainWindow):
             filename, _ = filename
         filename = str(filename)
         if filename:
-            self.loadFile(filename)
+            self.loadFile(self.tabs.currentIndex(), filename)
 
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir
@@ -1818,10 +1840,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if current_filename in self.imageList:
             # retain currently selected file
-            self.fileListWidget.setCurrentRow(
+            self.fileListWidgetList[self.tabs.currentIndex()].setCurrentRow(
                 self.imageList.index(current_filename)
             )
-            self.fileListWidget.repaint()
+            self.fileListWidgetList[self.tabs.currentIndex()].repaint()
 
     def saveFile(self, _value=False):
         assert not self.image.isNull(), "cannot save empty image"
@@ -1913,7 +1935,7 @@ class MainWindow(QtWidgets.QMainWindow):
             os.remove(label_file)
             logger.info("Label file is removed: {}".format(label_file))
 
-            item = self.fileListWidget.currentItem()
+            item = self.fileListWidgetList[self.tabs.currentIndex()].currentItem()
             item.setCheckState(Qt.Unchecked)
 
             self.resetState()
@@ -2038,8 +2060,8 @@ class MainWindow(QtWidgets.QMainWindow):
     @property
     def imageList(self):
         lst = []
-        for i in range(self.fileListWidget.count()):
-            item = self.fileListWidget.item(i)
+        for i in range(self.fileListWidgetList[self.tabs.currentIndex()].count()):
+            item = self.fileListWidgetList[self.tabs.currentIndex()].item(i)
             # lst.append(item.text())
             lst.append(item.data(99))  # by hw1230
         return lst
@@ -2068,7 +2090,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 item.setCheckState(Qt.Checked)
             else:
                 item.setCheckState(Qt.Unchecked)
-            self.fileListWidget.addItem(item)
+            self.fileListWidgetList.addItem(item)
 
         if len(self.imageList) > 1:
             self.actions.openNextImg.setEnabled(True)
@@ -2076,7 +2098,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.openNextImg()
 
-    def importDirImages(self, dirpath, pattern=None, load=True):
+    def importDirImages(self, tabIndex, dirpath, pattern=None, load=True):
         if not self.mayContinue() or not dirpath:
             return
 
@@ -2085,8 +2107,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.lastOpenDir = dirpath
         self.filename = None
-        self.fileListWidget.clear()
-        self.doneListWidget.clear()  # by hw1230
+
         for filename in self.scanAllImages(dirpath):
             if pattern and pattern not in filename:
                 continue
@@ -2115,7 +2136,7 @@ class MainWindow(QtWidgets.QMainWindow):
             #    item.setCheckState(Qt.Unchecked)
             item.setCheckState(Qt.Unchecked)
 
-            self.fileListWidget.addItem(item)
+            self.fileListWidgetList[tabIndex].addItem(item)
         self.openNextImg(load=load)
 
     def scanAllImages(self, folderPath):
@@ -2133,46 +2154,78 @@ class MainWindow(QtWidgets.QMainWindow):
         images.sort(key=lambda x: x.lower())
         return images
 
+    def tabChanged(self):
+        ti = self.tabs.currentIndex()
+        # print("ci=" + str(self.fileListWidgetList[ti].currentRow()))
+        if self.fileListWidgetList[ti].count() > 0:
+            # print("currentRow=" + str(self.fileListWidgetList[ti].currentRow()))
+            if self.fileListWidgetList[ti].currentRow() == -1:
+                self.fileListWidgetList[ti].setCurrentRow(0)
+            self.fileSelectionChanged()
+        else:
+            self.resetState()
+
     # by hw1230
     def login(self):
-        self.fileListWidget.clear()
-        self.doneListWidget.clear()
-
         self.login_id = self.id.text()
+        # print('login_id: %s' % self.login_id)
 
-        # bucket_download_directory = down_directory + self.login_id
-        bucket_download_directory = down_directory
+        for i in range(0, 3):
+            self.fileListWidgetList[i].clear()
+            self.doneListWidgetList[i].clear()
+            self.uploadBtnList[i].setEnabled(False)
 
-        try:
-            if type(bucket_download_directory) is list:
-                osh.download_directory_by_client(down_bucket_name, bucket_download_directory, local_depository, self.login_id)
+            # bucket_download_directory = down_directory + self.login_id
+            bucket_download_directory = down_directory_list[i]
+            target_path = local_depository + local_directory_name[i] + r"\\"
+            # print('bucket_download_directory: %s' % bucket_download_directory)
+            # print('target_path: %s' % target_path)
+
+            if i == 0:
+                try:
+                    if type(bucket_download_directory) is list:
+                        osh.download_directory_by_client(down_bucket_name_list[i], bucket_download_directory, target_path, self.login_id)
+                    else:
+                        osh.download_directory(down_bucket_name_list[i], bucket_download_directory, target_path, self.login_id)
+
+                except Exception as E:
+                    QMessageBox.warning(self, "", str(E), QMessageBox.Ok)
+                    return
             else:
-                osh.download_directory(down_bucket_name, bucket_download_directory, local_depository, self.login_id)
+                try:
+                    if type(bucket_download_directory) is list:
+                        osh.download_directory_by_client(down_bucket_name_list[i], bucket_download_directory,
+                                                         target_path, self.login_id)
+                    else:
+                        osh.download_directory_image(down_bucket_name_list[i], down_bucket_name_list[0],
+                                                     bucket_download_directory, target_path, self.login_id)
 
-        except Exception as E:
-            QMessageBox.warning(self, "", str(E), QMessageBox.Ok)
-            return
+                except Exception as E:
+                    QMessageBox.warning(self, "", str(E), QMessageBox.Ok)
+                    return
 
-        self.importDirImages(local_depository)
+            self.importDirImages(i, target_path)
 
-        self.uploadBtn.setEnabled(True)
+            if self.fileListWidgetList[i].count() > 0:
+                self.uploadBtnList[i].setEnabled(True)
 
-        localFiles = os.listdir(local_depository)
-        for f in localFiles:
-            if f.endswith(".bak"):
-                ff = f.rsplit('.', 1)[0].rsplit('_', 1)
-                item = QtWidgets.QListWidgetItem(ff[0] + "." + ff[1])
-                self.doneListWidget.addItem(item)
+            # localFiles = os.listdir(local_depository)
+            # for f in localFiles:
+            #     if f.endswith(".bak"):
+            #         ff = f.rsplit('.', 1)[0].rsplit('_', 1)
+            #         item = QtWidgets.QListWidgetItem(ff[0] + "." + ff[1])
+            #         self.doneListWidgetList.addItem(item)
 
     # by hw1230
     def upload(self):
         if not self.mayContinue():
             return
 
+        ti = self.tabs.currentIndex()
         checkedFiles = []
-        for i in range(self.fileListWidget.count()):
-            if self.fileListWidget.item(i).checkState() == Qt.Checked:
-                checkedFiles.append([self.fileListWidget.item(i).data(99), i])
+        for i in range(self.fileListWidgetList[ti].count()):
+            if self.fileListWidgetList[ti].item(i).checkState() == Qt.Checked:
+                checkedFiles.append([self.fileListWidgetList[ti].item(i).data(99), i])
 
         if not checkedFiles:
             QMessageBox.warning(self, "", "업로드할 이미지를 선택하세요", QMessageBox.Ok)
@@ -2185,25 +2238,40 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             i = 0
             for s in checkedFiles[::-1]:
-                # print(s[0])
+                print(s[0])
                 upFile = s[0].split('.')[0] + ".json"
-                # print(upFile)
+                print(upFile)
                 if os.path.isfile(upFile):
-                    osh.upload_object(up_bucket_name, upFile, up_directory + self.login_id)
-                    ss = s[0].split('.')
-                    newName = ss[0] + "_" + ss[1] + ".bak"
-                    if os.path.isfile(newName):
-                        os.remove(newName)
-                    os.rename(s[0], newName)
+                    # json upload
+                    osh.upload_object_simply(up_bucket_name_list[ti], upFile,
+                                             upFile.split(local_directory_name[ti] + r"\\")[1].replace(os.path.sep, "/"))
+
+                    if ti == 1 or ti == 2:
+                        # -rework json 삭제
+                        osh.delete_object(down_bucket_name_list[ti],
+                                          upFile.split(local_directory_name[ti] + r"\\")[1].replace(os.path.sep, "/"))
+                        os.remove(s[0])     # local 이미지 파일 삭제
+                        os.remove(upFile)   # local json 파일 삭제
+                    else:
+                        newName = osh.get_bak_file_name(s[0])
+                        if os.path.isfile(newName):
+                            os.remove(newName)
+                        os.rename(s[0], newName)
                     item = QtWidgets.QListWidgetItem(s[0].split(os.path.sep)[-1])
-                    self.doneListWidget.addItem(item)
-                    self.fileListWidget.takeItem(s[1])
+                    self.doneListWidgetList[ti].addItem(item)
+                    self.fileListWidgetList[ti].takeItem(s[1])
+
                 i = i + 1
                 progress.setValue(i)
-
         except Exception as E:
+            traceback.print_exc()
             QMessageBox.warning(self, "", str(E), QMessageBox.Ok)
             return
+
+        # 목록이 비게 되면
+        if self.fileListWidgetList[ti].count() == 0:
+            self.resetState()
+            self.uploadBtnList[ti].setEnabled(False)
 
     # by hw1230
     def autoAnnotation(self):
