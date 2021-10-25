@@ -31,8 +31,7 @@ s3_up = boto3.client(service_name, aws_access_key_id=app.up_access_key, aws_secr
 s3 = boto3.Session(region_name='kr-standard',
                    aws_access_key_id=app.down_access_key,
                    aws_secret_access_key=app.down_access_token).resource('s3',
-                                                                         endpoint_url='https://kr.object.ncloudstorage.com')  #
-
+                                                                         endpoint_url='https://kr.object.ncloudstorage.com')
 
 # 버킷 목록 가져오기
 def get_bucket_list():
@@ -245,6 +244,18 @@ def upload_directory(bucket_name, local_folder_path, directory):
         print(NFE)
     except Exception as E:
         print(E)
+
+def delete_object(bucket_name, local_file_path):
+    s3bucket = s3.Bucket(bucket_name)
+    # 삭제할 오브젝트명 설정
+    object_name = local_file_path.split("labelme" + os.path.sep)[1].replace(os.path.sep, "/")  # 수정 필요
+    s3bucket.delete_objects(Delete={
+        'Objects': [
+            {
+                'Key': object_name
+            }
+        ]
+    })
 
 
 if __name__ == '__main__':
