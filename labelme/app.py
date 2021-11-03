@@ -2254,9 +2254,9 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             i = 0
             for s in checkedFiles[::-1]:
-                print(s[0])
+                # print(s[0])
                 upFile = s[0].split('.')[0] + ".json"
-                print(upFile)
+                # print(upFile)
                 if os.path.isfile(upFile):
                     # json upload
                     osh.upload_object_simply(up_bucket_name_list[ti], upFile,
