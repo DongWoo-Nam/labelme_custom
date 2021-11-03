@@ -33,8 +33,7 @@ s3_up = boto3.client(service_name, aws_access_key_id=app.up_access_key, aws_secr
 s3 = boto3.Session(region_name='kr-standard',
                    aws_access_key_id=app.down_access_key,
                    aws_secret_access_key=app.down_access_token).resource('s3',
-                                                                         endpoint_url='https://kr.object.ncloudstorage.com')  #
-
+                                                                         endpoint_url='https://kr.object.ncloudstorage.com')
 
 # 버킷 목록 가져오기
 def get_bucket_list():
