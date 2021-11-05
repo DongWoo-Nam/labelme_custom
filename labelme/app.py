@@ -259,9 +259,20 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.canvas.zoomRequest.connect(self.zoomRequest)
 
+        # canvasLayout = QtWidgets.QVBoxLayout()
+        # canvasLayout.setContentsMargins(0, 0, 0, 0)
+        # canvasLayout.setSpacing(0)
+        # canvasLayout.addWidget(self.canvas)
+
+        # self.parentWidget = QtWidgets.QWidget()
+        # self.parentWidget.setContentsMargins(50, 50, 50, 50)
+        # self.parentWidget.setLayout(canvasLayout)
+
         scrollArea = QtWidgets.QScrollArea()
         scrollArea.setWidget(self.canvas)
+        # scrollArea.setViewport(self.canvas)
         scrollArea.setWidgetResizable(True)
+        # scrollArea.setViewportMargins(100, 100, 100, 100)
         self.scrollBars = {
             Qt.Vertical: scrollArea.verticalScrollBar(),
             Qt.Horizontal: scrollArea.horizontalScrollBar(),
@@ -1669,6 +1680,8 @@ class MainWindow(QtWidgets.QMainWindow):
         assert not self.image.isNull(), "cannot paint null image"
         self.canvas.scale = 0.01 * self.zoomWidget.value()
         self.canvas.adjustSize()
+        self.canvas.setMinimumHeight(self.canvas.pixmap.height() * self.zoomWidget.value() * 0.01 + 30)
+        self.canvas.setMinimumWidth(self.canvas.pixmap.width() * self.zoomWidget.value() * 0.01 + 30)
         self.canvas.update()
 
     def adjustScale(self, initial=False):
@@ -1679,7 +1692,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def scaleFitWindow(self):
         """Figure out the size of the pixmap to fit the main widget."""
-        e = 2.0  # So that no scrollbars are generated.
+        e = 32.0  # So that no scrollbars are generated.
         w1 = self.centralWidget().width() - e
         h1 = self.centralWidget().height() - e
         a1 = w1 / h1
@@ -2117,6 +2130,9 @@ class MainWindow(QtWidgets.QMainWindow):
             if os.path.isfile(ss[0] + "_" + ss[1] + ".bak"):
                 continue
 
+            if filename.find(self.login_id) == -1 :
+                continue
+
             label_file = osp.splitext(filename)[0] + ".json"
             if self.output_dir:
                 label_file_without_path = osp.basename(label_file)
@@ -2238,9 +2254,9 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             i = 0
             for s in checkedFiles[::-1]:
-                print(s[0])
+                # print(s[0])
                 upFile = s[0].split('.')[0] + ".json"
-                print(upFile)
+                # print(upFile)
                 if os.path.isfile(upFile):
                     # json upload
                     osh.upload_object_simply(up_bucket_name_list[ti], upFile,
