@@ -165,7 +165,7 @@ def download_directory_by_client(bucket_name, directory_name, save_path, login_i
     print('bucket: %s' % bucket_name)
     print('directory: %s' % directory_name)
 
-    items = get_object_list_directory_all(bucket_name=bucket_name, prefix=login_id, extension=['png', 'jpeg', 'jpg'])
+    items = get_object_list_directory_all(bucket_name=bucket_name, prefix=login_id, extension=['png', 'jpeg', 'jpg', 'JPG'])
 
     total_items = len(items)
     progress = QtWidgets.QProgressDialog("Download files...", "", 0, total_items)
@@ -186,7 +186,7 @@ def download_directory_by_client(bucket_name, directory_name, save_path, login_i
 
 
 # 디렉토리 다운로드
-def download_directory(bucket_name, directory_name, save_path, login_id):
+def download_directory(bucket_name, directory_name, save_path, login_id, extension):
     print('bucket: %s' % bucket_name)
     print('directory: %s' % directory_name)
     print('save_path: %s' % save_path)
@@ -194,7 +194,8 @@ def download_directory(bucket_name, directory_name, save_path, login_id):
         os.makedirs(save_path)
     s3bucket = s3.Bucket(bucket_name)
 
-    items = get_object_list_directory(bucket_name, directory_name, login_id)['items']
+    items_origin = get_object_list_directory(bucket_name, directory_name, login_id)['items']
+    items = [x for x in items_origin if x.endswith(tuple(extension))]
 
     progress = QtWidgets.QProgressDialog("Download files...", '', 0, len(items))
     progress.setCancelButton(None)
@@ -205,7 +206,7 @@ def download_directory(bucket_name, directory_name, save_path, login_id):
         download_object(file, save_path, s3bucket)
         progress.setValue(i)
 
-def download_directory_image(bucket_name, img_bucket_name, directory_name, save_path, login_id):
+def download_directory_image(bucket_name, img_bucket_name, directory_name, save_path, login_id, extension):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     s3bucket = s3.Bucket(bucket_name)
@@ -213,7 +214,8 @@ def download_directory_image(bucket_name, img_bucket_name, directory_name, save_
     # print('bucket: %s' % bucket_name)
     # print('directory: %s' % directory_name)
 
-    items = get_object_list_directory(bucket_name, directory_name, login_id)['items']
+    items_origin = get_object_list_directory(bucket_name, directory_name, login_id)['items']
+    items = [x for x in items_origin if x.endswith(tuple(extension))]
 
     progress = QtWidgets.QProgressDialog("Download files...", '', 0, len(items))
     progress.setCancelButton(None)
@@ -240,7 +242,7 @@ def upload_object_simply(bucket_name, src_file_path, tgt_file_path):
     s3bucket.upload_file(src_file_path, tgt_file_path)
 
 # 오브젝트 업로드
-def upload_object(bucket_name, local_file_path, directory):
+def upload_object(bucket_name, local_file_path):
     # 디렉토리 생성(디렉토리가 존재하지 않으면 생성)
     s3bucket = s3.Bucket(bucket_name)
     # s3_up.put_object(Bucket=bucket_name, Key=directory)

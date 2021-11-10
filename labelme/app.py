@@ -63,11 +63,13 @@ local_depository = conf["save_driver"].upper() + r":\\labelme\\"  # 저장 경�
 version1_depository = os.path.expanduser('~') + os.path.sep + "Documents" + os.path.sep + "labelme" + os.path.sep
 down_bucket_name_list = []
 down_directory_list = []
+down_extension_list = []
 up_bucket_name_list = []
 up_directory_list = []
 for i in range(1, 4):
     down_bucket_name_list.append(conf["down" + str(i) + "_bucket_name"])
     down_directory_list.append(conf["down" + str(i) + "_directory"])
+    down_extension_list.append(conf["down" + str(i) + "_extension"])
     up_bucket_name_list.append(conf["up" + str(i) + "_bucket_name"])
     up_directory_list.append(conf["up" + str(i) + "_directory"])
 
@@ -2224,7 +2226,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     if type(bucket_download_directory) is list:
                         osh.download_directory_by_client(down_bucket_name_list[i], bucket_download_directory, target_path, self.login_id)
                     else:
-                        osh.download_directory(down_bucket_name_list[i], bucket_download_directory, target_path, self.login_id)
+                        osh.download_directory(down_bucket_name_list[i], bucket_download_directory, target_path, self.login_id, extension=down_extension_list[i])
 
                 except Exception as E:
                     QMessageBox.warning(self, "", str(E), QMessageBox.Ok)
@@ -2236,7 +2238,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                                          target_path, self.login_id)
                     else:
                         osh.download_directory_image(down_bucket_name_list[i], down_bucket_name_list[0],
-                                                     bucket_download_directory, target_path, self.login_id)
+                                                     bucket_download_directory, target_path, self.login_id, extension=down_extension_list[i])
 
                 except Exception as E:
                     QMessageBox.warning(self, "", str(E), QMessageBox.Ok)
