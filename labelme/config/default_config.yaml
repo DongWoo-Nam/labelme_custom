@@ -39,10 +39,20 @@ label_colors: null
 save_driver: C
 down1_bucket_name: test-process02
 down1_directory:  shrimp/
+down1_extension:
+  - .png
+  - .PNG
+  - .jpg
+  - .JPG
+  - .jpeg
 down2_bucket_name: test-process03-nok
 down2_directory:  shrimp/
+down2_extension:
+  - .json
 down3_bucket_name: test-process04-nok
 down3_directory:  shrimp/
+down3_extension:
+  - .json
 up1_bucket_name: test-process03
 up1_directory: shrimp/
 up2_bucket_name: test-process03-rework
