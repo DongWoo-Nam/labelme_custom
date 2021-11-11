@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import functools
+import glob
 import math
 import os
 import os.path as osp
 import re
+import shutil
 import webbrowser
 import time
 import sys
@@ -56,15 +58,18 @@ else:
 # added by hw1230
 # conf = get_config()
 conf = get_config(CONFFILE) # added by khlee
-local_depository = r"C:\\labelme\\"  # 저장 경로 수정 by dwnam 210913  저장 경로 확인 필요
-# local_depository = os.path.expanduser('~') + os.path.sep + "Documents" + os.path.sep + "labelme" + os.path.sep
+# local_depository = r"C:\\labelme\\"  # 저장 경로 수정 by dwnam 210913  저장 경로 확인 필요
+local_depository = conf["save_driver"].upper() + r":\\labelme\\"  # 저장 경로 드라이버를 수정 할 수 있도록 변경 by dwnam 211104
+version1_depository = os.path.expanduser('~') + os.path.sep + "Documents" + os.path.sep + "labelme" + os.path.sep
 down_bucket_name_list = []
 down_directory_list = []
+down_extension_list = []
 up_bucket_name_list = []
 up_directory_list = []
 for i in range(1, 4):
     down_bucket_name_list.append(conf["down" + str(i) + "_bucket_name"])
     down_directory_list.append(conf["down" + str(i) + "_directory"])
+    down_extension_list.append(conf["down" + str(i) + "_extension"])
     up_bucket_name_list.append(conf["up" + str(i) + "_bucket_name"])
     up_directory_list.append(conf["up" + str(i) + "_directory"])
 
@@ -259,9 +264,20 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.canvas.zoomRequest.connect(self.zoomRequest)
 
+        # canvasLayout = QtWidgets.QVBoxLayout()
+        # canvasLayout.setContentsMargins(0, 0, 0, 0)
+        # canvasLayout.setSpacing(0)
+        # canvasLayout.addWidget(self.canvas)
+
+        # self.parentWidget = QtWidgets.QWidget()
+        # self.parentWidget.setContentsMargins(50, 50, 50, 50)
+        # self.parentWidget.setLayout(canvasLayout)
+
         scrollArea = QtWidgets.QScrollArea()
         scrollArea.setWidget(self.canvas)
+        # scrollArea.setViewport(self.canvas)
         scrollArea.setWidgetResizable(True)
+        # scrollArea.setViewportMargins(100, 100, 100, 100)
         self.scrollBars = {
             Qt.Vertical: scrollArea.verticalScrollBar(),
             Qt.Horizontal: scrollArea.horizontalScrollBar(),
@@ -1669,6 +1685,8 @@ class MainWindow(QtWidgets.QMainWindow):
         assert not self.image.isNull(), "cannot paint null image"
         self.canvas.scale = 0.01 * self.zoomWidget.value()
         self.canvas.adjustSize()
+        self.canvas.setMinimumHeight(self.canvas.pixmap.height() * self.zoomWidget.value() * 0.01 + 30)
+        self.canvas.setMinimumWidth(self.canvas.pixmap.width() * self.zoomWidget.value() * 0.01 + 30)
         self.canvas.update()
 
     def adjustScale(self, initial=False):
@@ -1679,7 +1697,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def scaleFitWindow(self):
         """Figure out the size of the pixmap to fit the main widget."""
-        e = 2.0  # So that no scrollbars are generated.
+        e = 32.0  # So that no scrollbars are generated.
         w1 = self.centralWidget().width() - e
         h1 = self.centralWidget().height() - e
         a1 = w1 / h1
@@ -2117,6 +2135,9 @@ class MainWindow(QtWidgets.QMainWindow):
             if os.path.isfile(ss[0] + "_" + ss[1] + ".bak"):
                 continue
 
+            if filename.find(self.login_id) == -1 :
+                continue
+
             label_file = osp.splitext(filename)[0] + ".json"
             if self.output_dir:
                 label_file_without_path = osp.basename(label_file)
@@ -2178,15 +2199,34 @@ class MainWindow(QtWidgets.QMainWindow):
             # bucket_download_directory = down_directory + self.login_id
             bucket_download_directory = down_directory_list[i]
             target_path = local_depository + local_directory_name[i] + r"\\"
-            # print('bucket_download_directory: %s' % bucket_download_directory)
-            # print('target_path: %s' % target_path)
+
+            # version1에서 작업하던 경로를 version2에 맞추어 변경  by dwnam 211104
+            file_list = glob.glob(local_depository + "*")
+            v1_file_list = glob.glob(version1_depository + "*")
+            # 피노 파이팅 데이터들이 C://labelme아래에 있을 거라서 아래의 스크립트 사용
+            for dir_name in file_list:
+                base_dir = os.path.dirname(dir_name)
+                folder = os.path.basename(dir_name)
+                if (folder != "first_data") & (folder != "re1_data") & (folder != "re2_data") & (folder != "init_data") & (folder != "rework_data"):
+                    if not os.path.exists(base_dir + "//" + "first_data"):
+                        os.makedirs(os.path.join(base_dir, "first_data"))
+                    shutil.move(dir_name + "/", os.path.join(base_dir, "first_data") + "//")
+            # tomato, shrimp, paprika 데이터들은 os.path.expanduser('~') + os.path.sep + "Documents" + os.path.sep + "labelme" + os.path.sep 아래에 있을 거라서 아래의 스크립트 사용
+            for dir_name in v1_file_list:
+                base_dir = os.path.dirname(local_depository)  # 'C://labelme'
+                folder = os.path.basename(dir_name)
+                if (folder == "tomato") | (folder == "shrimp") | (folder == "paprika") | (folder == "RDA"):
+                    if not os.path.exists(base_dir + "//" + "first_data"):
+                        os.makedirs(os.path.join(base_dir, "first_data"))
+                    shutil.move(dir_name + "/", os.path.join(base_dir, "first_data") + "//")
+
 
             if i == 0:
                 try:
                     if type(bucket_download_directory) is list:
                         osh.download_directory_by_client(down_bucket_name_list[i], bucket_download_directory, target_path, self.login_id)
                     else:
-                        osh.download_directory(down_bucket_name_list[i], bucket_download_directory, target_path, self.login_id)
+                        osh.download_directory(down_bucket_name_list[i], bucket_download_directory, target_path, self.login_id, extension=down_extension_list[i])
 
                 except Exception as E:
                     QMessageBox.warning(self, "", str(E), QMessageBox.Ok)
@@ -2198,7 +2238,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                                          target_path, self.login_id)
                     else:
                         osh.download_directory_image(down_bucket_name_list[i], down_bucket_name_list[0],
-                                                     bucket_download_directory, target_path, self.login_id)
+                                                     bucket_download_directory, target_path, self.login_id, extension=down_extension_list[i])
 
                 except Exception as E:
                     QMessageBox.warning(self, "", str(E), QMessageBox.Ok)
@@ -2238,9 +2278,9 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             i = 0
             for s in checkedFiles[::-1]:
-                print(s[0])
+                # print(s[0])
                 upFile = s[0].split('.')[0] + ".json"
-                print(upFile)
+                # print(upFile)
                 if os.path.isfile(upFile):
                     # json upload
                     osh.upload_object_simply(up_bucket_name_list[ti], upFile,
