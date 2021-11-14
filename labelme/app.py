@@ -79,6 +79,8 @@ up_access_key = conf["up_access_key"]
 up_access_token = conf["up_access_token"]
 
 local_directory_name = ['first_data', 're1_data', 're2_data']
+tab_title = ['초기 데이터', '1차 검수', '2차 검수']
+result_title = '작업 완료 목록'
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -209,6 +211,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.fileListWidgetList = []
         self.fileListLayoutList = []
         self.doneListWidgetList = []
+        self.resultLabelList = []
         
         for i in range(0, 3):
             self.uploadBtnList.append(QtWidgets.QPushButton("완료 데이터 업로드", self))
@@ -227,19 +230,20 @@ class MainWindow(QtWidgets.QMainWindow):
             self.fileListLayoutList[i].setSpacing(0)
             self.fileListLayoutList[i].addWidget(self.fileListWidgetList[i])
             self.fileListLayoutList[i].addWidget(self.uploadBtnList[i])
-            self.fileListLayoutList[i].addWidget(QtWidgets.QLabel('작업 완료 목록', self))
+            self.resultLabelList.append(QtWidgets.QLabel(result_title + " (0건)", self))
+            self.fileListLayoutList[i].addWidget(self.resultLabelList[i])
             self.fileListLayoutList[i].addWidget(self.doneListWidgetList[i])
             
         self.tabs = QtWidgets.QTabWidget()
         t1 = QtWidgets.QWidget()
         t1.setLayout(self.fileListLayoutList[0])
-        self.tabs.addTab(t1, '초기 데이터')
+        self.tabs.addTab(t1, tab_title[0])
         t2 = QtWidgets.QWidget()
         t2.setLayout(self.fileListLayoutList[1])
-        self.tabs.addTab(t2, '1차 검수 데이터')
+        self.tabs.addTab(t2, tab_title[1])
         t3 = QtWidgets.QWidget()
         t3.setLayout(self.fileListLayoutList[2])
-        self.tabs.addTab(t3, '2차 검수 데이터')
+        self.tabs.addTab(t3, tab_title[2])
         self.tabs.currentChanged.connect(self.tabChanged)
 
         outerLayout = QtWidgets.QVBoxLayout()
@@ -2016,7 +2020,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = not self._config["keep_prev"]
 
     def removeSelectedPoint(self):
-        self.canvas.removeSelectedPoint()
+        if not self.canvas.removeSelectedPoint():
+            return
         if not self.canvas.hShape.points:
             self.canvas.deleteShape(self.canvas.hShape)
             self.remLabels([self.canvas.hShape])
@@ -2108,7 +2113,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 item.setCheckState(Qt.Checked)
             else:
                 item.setCheckState(Qt.Unchecked)
-            self.fileListWidgetList.addItem(item)
+            self.fileListWidgetList[self.tabs.currentIndex()].addItem(item)
 
         if len(self.imageList) > 1:
             self.actions.openNextImg.setEnabled(True)
@@ -2175,6 +2180,10 @@ class MainWindow(QtWidgets.QMainWindow):
         images.sort(key=lambda x: x.lower())
         return images
 
+    def changeTabTitle(self):
+        for i in range(0, 3):
+            self.tabs.setTabText(i, tab_title[i] + " ({:,}건)".format(self.fileListWidgetList[i].count()))
+
     def tabChanged(self):
         ti = self.tabs.currentIndex()
         # print("ci=" + str(self.fileListWidgetList[ti].currentRow()))
@@ -2188,8 +2197,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # by hw1230
     def login(self):
-        self.login_id = self.id.text()
-        # print('login_id: %s' % self.login_id)
+        self.login_id = self.id.text().strip()
+
+        if self.login_id == "":
+            QMessageBox.warning(self, "", "전화번호를 입력하세요.", QMessageBox.Ok)
+            return
 
         for i in range(0, 3):
             self.fileListWidgetList[i].clear()
@@ -2255,6 +2267,7 @@ class MainWindow(QtWidgets.QMainWindow):
             #         ff = f.rsplit('.', 1)[0].rsplit('_', 1)
             #         item = QtWidgets.QListWidgetItem(ff[0] + "." + ff[1])
             #         self.doneListWidgetList.addItem(item)
+        self.changeTabTitle()
 
     # by hw1230
     def upload(self):
@@ -2275,6 +2288,10 @@ class MainWindow(QtWidgets.QMainWindow):
         progress.setAutoClose(True)
         progress.setWindowModality(Qt.WindowModal)
 
+        log_path = local_depository + local_directory_name[ti] + r"\\"
+        up_num = 0
+        remain_num = self.fileListWidgetList[ti].count()
+        done_num = self.doneListWidgetList[ti].count()
         try:
             i = 0
             for s in checkedFiles[::-1]:
@@ -2285,6 +2302,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     # json upload
                     osh.upload_object_simply(up_bucket_name_list[ti], upFile,
                                              upFile.split(local_directory_name[ti] + r"\\")[1].replace(os.path.sep, "/"))
+                    osh.log_by_bucket_name(log_path, "upload " + os.path.basename(upFile), down_bucket_name_list[ti], self.login_id)
+                    up_num = up_num + 1
 
                     if ti == 1 or ti == 2:
                         # -rework json 삭제
@@ -2307,6 +2326,12 @@ class MainWindow(QtWidgets.QMainWindow):
             traceback.print_exc()
             QMessageBox.warning(self, "", str(E), QMessageBox.Ok)
             return
+
+        remain_num = remain_num - up_num
+        done_num = done_num + up_num
+        osh.log_by_bucket_name(log_path, "uploaded %d json files. 잔여: %d건, 완료: %d건" % (up_num, remain_num, done_num), down_bucket_name_list[ti], self.login_id)
+        self.resultLabelList[ti].setText(result_title + " ({:,}건)".format(self.doneListWidgetList[ti].count()))
+        self.changeTabTitle()
 
         # 목록이 비게 되면
         if self.fileListWidgetList[ti].count() == 0:
