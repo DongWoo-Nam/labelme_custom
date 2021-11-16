@@ -1,3 +1,4 @@
+import io
 import os
 from typing import List, Any
 
@@ -48,7 +49,7 @@ def get_object_list_directory_all(bucket_name, prefix='/', extension: object = N
         extension = []
 
     items = []
-    for directory in app.down_directory:
+    for directory in app.down_directory_list[0]:
         dir = directory + prefix + '/'
         for obj in bucket.objects.filter(Prefix=dir):
             try:
@@ -297,6 +298,13 @@ def delete_object(bucket_name, object_name):
             }
         ]
     })
+
+def read_file(bucket_name, file_name):
+    s3bucket = s3.Bucket(bucket_name)
+    file = io.BytesIO()
+    obj = s3bucket.Object(file_name)
+    obj.download_fileobj(file)
+    return file
 
 
 if __name__ == '__main__':
