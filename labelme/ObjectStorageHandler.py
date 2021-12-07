@@ -217,12 +217,15 @@ def download_directory(bucket_name, directory_name, save_path, login_id, extensi
     dict_ = f.read().decode()
     data = json.loads(dict_)
     proc02_items_origin = [x for x in data[directory_name.split("/")[0]] if login_id in x]
+    proc02_items_origin = [x.split(".")[0] for x in proc02_items_origin]
     f_3 = read_file("process03", "process03_object_list.json")
     f_3.seek(0)
     dict_3 = f_3.read().decode()
     data_3 = json.loads(dict_3)
     proc03_items_origin = [x for x in data_3[directory_name.split("/")[0]] if login_id in x]
+    proc03_items_origin = [x.split(".")[0] for x in proc03_items_origin]
     items_origin = list(set(proc02_items_origin) - set(proc03_items_origin))
+    items_origin = [x+".png" for x in items_origin]
     # items_origin = get_object_list_directory(bucket_name, directory_name, login_id)['items']
     items = [x for x in items_origin if x.endswith(tuple(extension))]
 
