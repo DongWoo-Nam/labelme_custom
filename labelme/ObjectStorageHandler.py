@@ -217,25 +217,27 @@ def download_directory(bucket_name, directory_name, save_path, login_id, extensi
     dict_ = f.read().decode()
     data = json.loads(dict_)
     proc02_items_origin = [x for x in data[directory_name.split("/")[0]] if login_id in x]
+    proc02_items_origin = [x for x in proc02_items_origin if x.endswith(tuple((".png", ".jpg")))]
     proc02_items_origin = [x.split(".")[0] for x in proc02_items_origin]
     f_3 = read_file("test-process03", "test-process03_object_list.json")
     f_3.seek(0)
     dict_3 = f_3.read().decode()
     data_3 = json.loads(dict_3)
     proc03_items_origin = [x for x in data_3[directory_name.split("/")[0]] if login_id in x]
+    proc02_items_origin = [x for x in proc02_items_origin if x.endswith(tuple(".json"))]
     proc03_items_origin = [x.split(".")[0] for x in proc03_items_origin]
     items_origin = list(set(proc02_items_origin) - set(proc03_items_origin))
     items_origin = [x+".png" for x in items_origin]
     # items_origin = get_object_list_directory(bucket_name, directory_name, login_id)['items']
-    items = [x for x in items_origin if x.endswith(tuple(extension))]
+    # items = [x for x in items_origin if x.endswith(tuple(extension))]
 
-    progress = QtWidgets.QProgressDialog("Download files...", '', 0, len(items))
+    progress = QtWidgets.QProgressDialog("Download files...", '', 0, len(items_origin))
     progress.setCancelButton(None)
     progress.setAutoClose(True)
     progress.setWindowModality(Qt.WindowModal)
 
     img_num = 0
-    for i, file in enumerate(items):
+    for i, file in enumerate(items_origin):
         file_path, file_name = os.path.split(file)
         if not os.path.exists(save_path + file_path):
             os.makedirs(save_path + file_path)
