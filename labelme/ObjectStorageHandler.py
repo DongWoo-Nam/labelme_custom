@@ -218,7 +218,7 @@ def download_directory(bucket_name, directory_name, save_path, login_id, extensi
     data = json.loads(dict_)
     proc02_items_origin = [x for x in data[directory_name.split("/")[0]] if login_id in x]
     proc02_items_origin = [x.split(".")[0] for x in proc02_items_origin]
-    f_3 = read_file("process03", "process03_object_list.json")
+    f_3 = read_file("test-process03", "test-process03_object_list.json")
     f_3.seek(0)
     dict_3 = f_3.read().decode()
     data_3 = json.loads(dict_3)
