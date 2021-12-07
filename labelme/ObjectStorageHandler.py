@@ -212,7 +212,18 @@ def download_directory(bucket_name, directory_name, save_path, login_id, extensi
         os.makedirs(save_path)
     s3bucket = s3.Bucket(bucket_name)
 
-    items_origin = get_object_list_directory(bucket_name, directory_name, login_id)['items']
+    f = read_file(bucket_name, f"{bucket_name}_object_list.json")
+    f.seek(0)
+    dict_ = f.read().decode()
+    data = json.loads(dict_)
+    proc02_items_origin = [x for x in data[directory_name.split("/")[0]] if login_id in x]
+    f_3 = read_file("process03", "process03_object_list.json")
+    f_3.seek(0)
+    dict_3 = f_3.read().decode()
+    data_3 = json.loads(dict_3)
+    proc03_items_origin = [x for x in data_3[directory_name.split("/")[0]] if login_id in x]
+    items_origin = list(set(proc02_items_origin) - set(proc03_items_origin))
+    # items_origin = get_object_list_directory(bucket_name, directory_name, login_id)['items']
     items = [x for x in items_origin if x.endswith(tuple(extension))]
 
     progress = QtWidgets.QProgressDialog("Download files...", '', 0, len(items))
@@ -243,7 +254,12 @@ def download_directory_image(bucket_name, img_bucket_name, directory_name, save_
     # print('bucket: %s' % bucket_name)
     # print('directory: %s' % directory_name)
 
-    items_origin = get_object_list_directory(bucket_name, directory_name, login_id)['items']
+    f = read_file(bucket_name, f"{bucket_name}_object_list.json")
+    f.seek(0)
+    dict_ = f.read().decode()
+    data = json.loads(dict_)
+    items_origin = [x for x in data[directory_name.split("/")[0]] if login_id in x]
+    # items_origin = get_object_list_directory(bucket_name, directory_name, login_id)['items']
     items = [x for x in items_origin if x.endswith(tuple(extension))]
 
     progress = QtWidgets.QProgressDialog("Download files...", '', 0, len(items))
