@@ -212,21 +212,27 @@ def download_directory(bucket_name, directory_name, save_path, login_id, extensi
         os.makedirs(save_path)
     s3bucket = s3.Bucket(bucket_name)
 
-    f = read_file(bucket_name, f"{bucket_name}_object_list.json")  # 배치로 생성된 object list 읽기
-    f.seek(0)
-    dict_ = f.read().decode()
+    f_2 = read_file(bucket_name, f"{bucket_name}_object_list.json")  # 배치로 생성된 object list 읽기
+    f_2.seek(0)
+    dict_ = f_2.read().decode()
     data = json.loads(dict_)
     proc02_items_origin = [x for x in data[directory_name.split("/")[0]] if login_id in x]  # directory_name.split("/")[0]는 'shrimp' or 'tomato' or 'paprika'
+    proc02_items_origin = [x for x in proc02_items_origin if directory_name in x]
     proc02_items_origin = [x for x in proc02_items_origin if x.endswith(tuple((".png", ".jpg")))]  # proc02이기때문에 이미지의 확장자만 가지고 오기
     proc02_items_origin = [x.split(".")[0] for x in proc02_items_origin]  # .json과 비교하기 위하여 뒤의 확장자 제외하고 이름 비교
 
-    f_3 = read_file("test-process03", "test-process03_object_list.json")  # 배치로 생성된 object list 읽기
+    if bucket_name != "phenotyping":
+        f_3 = read_file("process03", "process03_object_list.json")  # 배치로 생성된 object list 읽기
+    else:
+        f_3 = read_file("phenotyping-anno", "phenotyping-anno_object_list.json")  # 배치로 생성된 object list 읽기
     f_3.seek(0)
     dict_3 = f_3.read().decode()
     data_3 = json.loads(dict_3)
     proc03_items_origin = [x for x in data_3[directory_name.split("/")[0]] if login_id in x]
+    proc03_items_origin = [x for x in proc03_items_origin if directory_name in x]
     proc03_items_origin = [x for x in proc03_items_origin if x.endswith(tuple(".json"))]  # proc3이기 때문에 .json의 확장자만 가지고 오기
     proc03_items_origin = [x.split(".")[0] for x in proc03_items_origin]
+
     items_origin = list(set(proc02_items_origin) - set(proc03_items_origin))  # proc2에는 있는데 아직 작업이 안 끝나서 proc3에 없는 파일들을 찾기 위하여 계산
     items_origin = [x+".png" for x in items_origin]  # 위에서 계산된 object list에 이미지의 확장자 붙여주기
     # items_origin = get_object_list_directory(bucket_name, directory_name, login_id)['items']  # 기존의 스크립트 주석처리 by dwnam 211207
