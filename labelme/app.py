@@ -2314,10 +2314,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     else:
                         os.remove(s[0])     # local 이미지 파일 삭제
                         os.remove(upFile)   # local json 파일 삭제
-                        # newName = osh.get_bak_file_name(s[0])
-                        # if os.path.isfile(newName):
-                        #     os.remove(newName)
-                        # os.rename(s[0], newName)
+                        # newName = osh.get_bak_file_name(s[0])  # 파일 .bak로 변경하는거 삭제 by dwnam 211207
+                        # if os.path.isfile(newName):  # 파일 .bak로 변경하는거 삭제 by dwnam 211207
+                        #     os.remove(newName)  # 파일 .bak로 변경하는거 삭제 by dwnam 211207
+                        # os.rename(s[0], newName)  # 파일 .bak로 변경하는거 삭제 by dwnam 211207
                     item = QtWidgets.QListWidgetItem(s[0].split(os.path.sep)[-1])
                     self.doneListWidgetList[ti].addItem(item)
                     self.fileListWidgetList[ti].takeItem(s[1])
