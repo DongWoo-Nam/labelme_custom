@@ -223,6 +223,8 @@ def download_directory(bucket_name, directory_name, save_path, login_id, extensi
 
     if bucket_name != "phenotyping":
         f_3 = read_file("process03", "process03_object_list.json")  # 배치로 생성된 object list 읽기
+    elif "test-" in bucket_name:  # test bucket에서도 가능하도록 수정
+        f_3 = read_file("test-process03", "test-process03_object_list.json")  # 배치로 생성된 object list 읽기
     else:
         f_3 = read_file("phenotyping-anno", "phenotyping-anno_object_list.json")  # 배치로 생성된 object list 읽기
     f_3.seek(0)
