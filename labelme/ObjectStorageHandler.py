@@ -221,12 +221,12 @@ def download_directory(bucket_name, directory_name, save_path, login_id, extensi
     proc02_items_origin = [x for x in proc02_items_origin if x.endswith(tuple((".png", ".jpg")))]  # proc02이기때문에 이미지의 확장자만 가지고 오기
     proc02_items_origin = [x.split(".")[0] for x in proc02_items_origin]  # .json과 비교하기 위하여 뒤의 확장자 제외하고 이름 비교
 
-    if bucket_name != "phenotyping":
-        f_3 = read_file("process03", "process03_object_list.json")  # 배치로 생성된 object list 읽기
-    elif "test-" in bucket_name:  # test bucket에서도 가능하도록 수정
+    if "test-" in bucket_name:  # test bucket에서도 가능하도록 수정
         f_3 = read_file("test-process03", "test-process03_object_list.json")  # 배치로 생성된 object list 읽기
-    else:
+    elif bucket_name == "phenotyping":
         f_3 = read_file("phenotyping-anno", "phenotyping-anno_object_list.json")  # 배치로 생성된 object list 읽기
+    else:
+        f_3 = read_file("process03", "process03_object_list.json")  # 배치로 생성된 object list 읽기
     f_3.seek(0)
     dict_3 = f_3.read().decode()
     data_3 = json.loads(dict_3)
