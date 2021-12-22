@@ -304,6 +304,8 @@ def download_directory_image(bucket_name, img_bucket_name, directory_name, save_
                 if check(img_bucket_name, img_file):  # json이랑 매칭되는 이미지가 있을 경우 다운로드
                     download_object(img_file, save_path, s3bucket2, login_id, False)
                     img_num = img_num + 1
+                else:
+                    log(save_path, f'파일 짝이 맞지 않습니다. : {img_file} / {file}', s3bucket, login_id)  # 짝이 맞지 않았을때 로그 생성 211222
         progress.setValue(i)
 
     log(save_path, "downloaded %d json files, %d image files" % (json_num, img_num), s3bucket, login_id)
