@@ -20,11 +20,11 @@ shift_auto_shape_color: 0
 label_colors: null
 
 # by hw1230
-version: 211105.1
+version: 211222.1
 
 save_driver: C
 down1_bucket_name: test-process02
-down1_directory:  shrimp/
+down1_directory: shrimp/
 down1_extension:
   - .png
   - .PNG
@@ -32,11 +32,11 @@ down1_extension:
   - .JPG
   - .jpeg
 down2_bucket_name: test-process03-nok
-down2_directory:  shrimp/
+down2_directory: shrimp/
 down2_extension:
   - .json
 down3_bucket_name: test-process04-nok
-down3_directory:  shrimp/
+down3_directory: shrimp/
 down3_extension:
   - .json
 up1_bucket_name: test-process03
