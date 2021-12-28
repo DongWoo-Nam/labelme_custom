@@ -23,28 +23,28 @@ label_colors: null
 version: 211222.1
 
 save_driver: C
-down1_bucket_name: test-process02
-down1_directory: shrimp/
+down1_bucket_name: phenotyping
+down1_directory: KIST/
 down1_extension:
   - .png
   - .PNG
   - .jpg
   - .JPG
   - .jpeg
-down2_bucket_name: test-process03-nok
-down2_directory: shrimp/
+down2_bucket_name: process03-nok
+down2_directory: KIST/
 down2_extension:
   - .json
-down3_bucket_name: test-process04-nok
-down3_directory: shrimp/
+down3_bucket_name: process04-nok
+down3_directory: KIST/
 down3_extension:
   - .json
-up1_bucket_name: test-process03
-up1_directory: shrimp/
-up2_bucket_name: test-process03-rework
-up2_directory: shrimp/
-up3_bucket_name: test-process04-rework
-up3_directory: shrimp/
+up1_bucket_name: process03
+up1_directory: KIST/
+up2_bucket_name: process03-rework
+up2_directory: KIST/
+up3_bucket_name: process04-rework
+up3_directory: KIST/
 
 down_access_key: DgEJlJmCpUpELcRyAj9F
 down_access_token: axcixs48W3YsXxCNmCaYSspUEOHzkXJW0u0b7gmi
