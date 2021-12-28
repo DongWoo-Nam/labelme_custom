@@ -155,6 +155,8 @@ def log(log_path, msg, s3bucket, login_id):
     dt_now = datetime.datetime.now()
     szDate = dt_now.strftime('%Y%m%d')
     szTime = dt_now.strftime('%H:%M:%S') + " "
+    if "/" in login_id:
+        login_id = login_id.replace("/", "_")
     log_file_name = login_id + "_" + szDate + ".txt"
     log_full_name = log_path + log_file_name
 
@@ -216,24 +218,31 @@ def download_directory(bucket_name, directory_name, save_path, login_id, extensi
     f_2.seek(0)
     dict_ = f_2.read().decode()
     data = json.loads(dict_)
-    proc02_items_origin = [x for x in data[directory_name.split("/")[0]] if login_id in x]  # directory_name.split("/")[0]는 'shrimp' or 'tomato' or 'paprika'
-    proc02_items_origin = [x for x in proc02_items_origin if directory_name in x]
-    proc02_items_origin = [x for x in proc02_items_origin if x.endswith(tuple((".png", ".jpg")))]  # proc02이기때문에 이미지의 확장자만 가지고 오기
-    proc02_items_origin = [x.split(".")[0] for x in proc02_items_origin]  # .json과 비교하기 위하여 뒤의 확장자 제외하고 이름 비교
+    try:  # 버킷에 폴더가 없거나 파일이 비었을때 오류 발생하지 않고 넘기기
+        proc02_items_origin = [x for x in data[directory_name.split("/")[0]] if login_id in x]  # directory_name.split("/")[0]는 'shrimp' or 'tomato' or 'paprika'
+        proc02_items_origin = [x for x in proc02_items_origin if directory_name in x]
+        proc02_items_origin = [x for x in proc02_items_origin if x.endswith(tuple((".png", ".jpg")))]  # proc02이기때문에 이미지의 확장자만 가지고 오기
+        proc02_items_origin = [x.split(".")[0] for x in proc02_items_origin]  # .json과 비교하기 위하여 뒤의 확장자 제외하고 이름 비교
+    except Exception as e:
+        proc02_items_origin = []
 
     if "test-" in bucket_name:  # test bucket에서도 가능하도록 수정
         f_3 = read_file("test-process03", "test-process03_object_list.json")  # 배치로 생성된 object list 읽기
     elif bucket_name == "phenotyping":
-        f_3 = read_file("phenotyping-anno", "phenotyping-anno_object_list.json")  # 배치로 생성된 object list 읽기
+        # f_3 = read_file("phenotyping-anno", "phenotyping-anno_object_list.json")  # 배치로 생성된 object list 읽기
+        f_3 = read_file("process03", "process03_object_list.json")
     else:
         f_3 = read_file("process03", "process03_object_list.json")  # 배치로 생성된 object list 읽기
     f_3.seek(0)
     dict_3 = f_3.read().decode()
     data_3 = json.loads(dict_3)
-    proc03_items_origin = [x for x in data_3[directory_name.split("/")[0]] if login_id in x]
-    proc03_items_origin = [x for x in proc03_items_origin if directory_name in x]
-    proc03_items_origin = [x for x in proc03_items_origin if x.endswith(tuple(".json"))]  # proc3이기 때문에 .json의 확장자만 가지고 오기
-    proc03_items_origin = [x.split(".")[0] for x in proc03_items_origin]
+    try:  # 버킷에 폴더가 없거나 파일이 비었을때 오류 발생하지 않고 넘기기
+        proc03_items_origin = [x for x in data_3[directory_name.split("/")[0]] if login_id in x]
+        proc03_items_origin = [x for x in proc03_items_origin if directory_name in x]
+        proc03_items_origin = [x for x in proc03_items_origin if x.endswith(tuple(".json"))]  # proc3이기 때문에 .json의 확장자만 가지고 오기
+        proc03_items_origin = [x.split(".")[0] for x in proc03_items_origin]
+    except Exception as e:
+        proc03_items_origin = []
 
     items_origin = list(set(proc02_items_origin) - set(proc03_items_origin))  # proc2에는 있는데 아직 작업이 안 끝나서 proc3에 없는 파일들을 찾기 위하여 계산
     items_origin = [x+".png" for x in items_origin]  # 위에서 계산된 object list에 이미지의 확장자 붙여주기
@@ -272,9 +281,12 @@ def download_directory_image(bucket_name, img_bucket_name, directory_name, save_
     f.seek(0)
     dict_ = f.read().decode()
     data = json.loads(dict_)
-    items_origin = [x for x in data[directory_name.split("/")[0]] if login_id in x]
-    # items_origin = get_object_list_directory(bucket_name, directory_name, login_id)['items']  # 기존의 스크립트 주석처리 by dwnam 211207
-    items = [x for x in items_origin if x.endswith(tuple(extension))]
+    try:  # 버킷에 폴더가 없거나 파일이 비었을때 오류 발생하지 않고 넘기기
+        items_origin = [x for x in data[directory_name.split("/")[0]] if login_id in x]
+        # items_origin = get_object_list_directory(bucket_name, directory_name, login_id)['items']  # 기존의 스크립트 주석처리 by dwnam 211207
+        items = [x for x in items_origin if x.endswith(tuple(extension))]
+    except Exception as e:
+        items = []
 
     progress = QtWidgets.QProgressDialog("Download files...", '', 0, len(items))
     progress.setCancelButton(None)
