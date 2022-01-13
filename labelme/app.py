@@ -767,10 +767,10 @@ class MainWindow(QtWidgets.QMainWindow):
         utils.addActions(
             self.menus.file,
             (
-                # open_,
+                open_,  # 20220113 로컬에 있는 파일 열 수 있도록 수정
                 openNextImg,
                 openPrevImg,
-                # opendir,
+                opendir,  # 20220113 로컬에 있는 파일 열 수 있도록 수정
                 # self.menus.recentFiles,
                 # save,
                 # saveAs,
@@ -824,8 +824,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tools = self.toolbar("Tools")
         # Menu buttons on Left
         self.actions.tool = (
-            # open_,
-            # opendir,
+            open_,  # 20220113 로컬에 있는 파일 열 수 있도록 수정
+            opendir,  # 20220113 로컬에 있는 파일 열 수 있도록 수정
             openNextImg,
             openPrevImg,
             # save,
@@ -2078,8 +2078,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 | QtWidgets.QFileDialog.DontResolveSymlinks,
             )
         )
-        self.importDirImages(targetDirPath)
-        self.uploadBtn.setEnabled(False)  # by hw1230
+        self.importDirImages(0,targetDirPath)  # 20220113 서민오 매니저가 수정을 위한 작업툴 원래 스크립트는 self.importDirImages(targetDirPath)이고 아래의 주석 해제
+        # self.uploadBtn.setEnabled(False)  # by hw1230  # 20220113 서민오 매니저가 수정을 위한 작업툴
 
     @property
     def imageList(self):
