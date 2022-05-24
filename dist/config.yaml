@@ -1,0 +1,48 @@
+# by hw1230
+save_driver: C
+down1_bucket_name: process02
+down1_directory: tomato/
+down2_bucket_name: process03-nok
+down2_directory: tomato/
+down3_bucket_name: process04-nok
+down3_directory: tomato/
+up1_bucket_name: test-process03
+up1_directory: tomato/
+up2_bucket_name: test-process03-rework
+up2_directory: tomato/
+up3_bucket_name: test-process04-rework
+up3_directory: tomato/
+
+down_access_key: DgEJlJmCpUpELcRyAj9F
+down_access_token: axcixs48W3YsXxCNmCaYSspUEOHzkXJW0u0b7gmi
+up_access_key: DgEJlJmCpUpELcRyAj9F
+up_access_token: axcixs48W3YsXxCNmCaYSspUEOHzkXJW0u0b7gmi
+
+#down1_bucket_name: phenotyping
+#down1_directory:
+#  - KIST/calibration/lettuce/20210923/TvRGB/
+#  - KIST/calibration/lettuce/20210924/TvRGB/
+#  - KIST/calibration/lettuce/20210925/TvRGB/
+#  - KIST/calibration/lettuce/20210926/TvRGB/
+#  - KIST/calibration/lettuce/20210927/TvRGB/
+#  - KIST/calibration/lettuce/20210928/TvRGB/
+#  - KIST/calibration/lettuce/20210929/TvRGB/
+#  - KIST/calibration/lettuce/20210930/TvRGB/
+#  - KIST/calibration/lettuce/20211001/TvRGB/
+#  - KIST/calibration/lettuce/20211002/TvRGB/
+#  - KIST/calibration/lettuce/20211003/TvRGB/
+#  - KIST/calibration/lettuce/20211004/TvRGB/
+#  - KIST/calibration/lettuce/20211005/TvRGB/
+#  - KIST/calibration/lettuce/20211006/TvRGB/
+#  - KIST/calibration/lettuce/20211020/TvRGB/
+#  - KIST/calibration/lettuce/20211021/TvRGB/
+#down2_bucket_name: process03-nok
+#down2_directory:  KIST/calibration/
+#down3_bucket_name: process04-nok
+#down3_directory:  KIST/calibration/
+#up1_bucket_name: phenotyping-anno
+#up1_directory: KIST/calibration/
+#up2_bucket_name: process03-rework
+#up2_directory: KIST/calibration/
+#up3_bucket_name: process04-rework
+#up3_directory: KIST/calibration/
